@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPELLBOUND — a 5-letter word game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #16182B;
+    --ink-soft: #23264A;
+    --paper: #F4F0FF;
+    --amber: #F2A541;
+    --amber-dim: #C9832E;
+    --green: #4C8C5C;
+    --cyan: #2FA8B8;
+    --orange: #E0742B;
+    --yellow: #C9A227;
+    --absent: #2B2E4A;
+    --tile-empty: #2A2D4E;
+    --border: #3A3E68;
+    --text: #ECE9FF;
+    --text-dim: #9C9FC7;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+
+  body{
+    background: radial-gradient(120% 140% at 50% -10%, #23264A 0%, var(--ink) 55%);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 28px 16px 60px;
+  }
+
+  header{
+    text-align:center;
+    margin-bottom: 18px;
+  }
+
+  .eyebrow{
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    font-size: 11px;
+    color: var(--amber);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-optical-sizing: auto;
+    font-size: clamp(32px, 7vw, 52px);
+    margin: 0;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  h1 span{ color: var(--amber); }
+
+  .subtitle{
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-top: 8px;
+    max-width: 420px;
+  }
+
+  .controls{
+    display:flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content:center;
+    margin: 18px 0 22px;
+  }
+
+  button{
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--ink-soft);
+    color: var(--text);
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+  button:hover{ border-color: var(--amber-dim); background:#2C2F58; }
+  button:active{ transform: scale(0.97); }
+
+  button.primary{
+    background: var(--amber);
+    border-color: var(--amber);
+    color: #1A1200;
+  }
+  button.primary:hover{ background:#FFB65C; }
+
+  select{
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--ink-soft);
+    color: var(--text);
+    cursor: pointer;
+    max-width: 260px;
+  }
+  select:hover{ border-color: var(--amber-dim); }
+  select:focus{ outline: 2px solid var(--amber); outline-offset: 1px; }
+
+  #message{
+    min-height: 20px;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    text-align:center;
+    max-width: 380px;
+  }
+  #message.win{ color: var(--green); font-weight:600; }
+  #message.lose{ color: var(--orange); font-weight:600; }
+
+  #board{
+    display:grid;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 7px;
+    margin-bottom: 26px;
+  }
+  .row{
+    display:grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 7px;
+  }
+  .tile{
+    width: 54px;
+    height: 54px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 26px;
+    text-transform: uppercase;
+    background: var(--tile-empty);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    transition: transform 0.15s ease, background 0.3s ease, border-color 0.3s ease;
+  }
+  .tile.filled{ border-color: #565A8E; transform: scale(1.03); }
+  .tile.reveal{ color: #fff; }
+  .tile.green{ background: var(--green); border-color: var(--green); }
+  .tile.cyan{ background: var(--cyan); border-color: var(--cyan); }
+  .tile.yellow{ background: var(--yellow); border-color: var(--yellow); }
+  .tile.orange{ background: var(--orange); border-color: var(--orange); }
+  .tile.absent{ background: var(--absent); border-color: var(--absent); color: var(--text-dim); }
+
+  @media (max-width: 380px){
+    .tile{ width: 46px; height: 46px; font-size: 22px; }
+  }
+
+  #keyboard{
+    display:flex;
+    flex-direction:column;
+    gap: 8px;
+    align-items:center;
+  }
+  .krow{ display:flex; gap: 6px; }
+  .key{
+    min-width: 34px;
+    height: 46px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: none;
+    background: var(--ink-soft);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition: background 0.2s ease;
+  }
+  .key:hover{ background: #33366B; }
+  .key.wide{ min-width: 56px; font-size: 11px; letter-spacing:0.03em; }
+  .key.green{ background: var(--green); color:#fff; }
+  .key.cyan{ background: var(--cyan); color:#fff; }
+  .key.yellow{ background: var(--yellow); color:#1A1200; }
+  .key.orange{ background: var(--orange); color:#fff; }
+  .key.absent{ background: #1D1F38; color: var(--text-dim); }
+
+  .legend{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content:center;
+    margin-top: 26px;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    max-width: 480px;
+  }
+  .legend div{ display:flex; align-items:center; gap: 6px; }
+  .swatch{ width: 12px; height: 12px; border-radius: 3px; display:inline-block; }
+
+  dialog{
+    background: var(--ink-soft);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 320px;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  dialog::backdrop{ background: rgba(10,10,20,0.7); }
+  dialog h2{ font-family:'Fraunces', serif; margin-top:0; font-size:20px; }
+  dialog input{
+    width:100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #14162A;
+    color: var(--text);
+    font-size: 18px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    text-align:center;
+    margin: 10px 0 16px;
+  }
+  dialog .dialog-actions{ display:flex; gap:8px; justify-content:flex-end; }
+  .hint{ font-size:12px; color:var(--text-dim); }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="eyebrow">Five letters · six tries</div>
+    <h1>SPELL<span>BOUND</span></h1>
+    <div class="subtitle">Guess the word. Colors tell you more than most Wordle clones — cyan and orange flag repeated letters.</div>
+  </header>
+
+  <div class="controls">
+    <select id="modeSelect">
+      <option value="playalong">Play with Friends — random word, pass the screen</option>
+      <option value="admin">Wordle — today's word, same for everyone</option>
+    </select>
+    <button class="primary" id="startBtn">Start</button>
+  </div>
+
+  <div id="message"></div>
+
+  <div id="board"></div>
+
+  <div id="keyboard"></div>
+
+  <div class="legend">
+    <div><span class="swatch" style="background:var(--green)"></span>Right spot</div>
+    <div><span class="swatch" style="background:var(--cyan)"></span>Right spot, letter repeats</div>
+    <div><span class="swatch" style="background:var(--yellow)"></span>Wrong spot</div>
+    <div><span class="swatch" style="background:var(--orange)"></span>Wrong spot, letter repeats</div>
+    <div><span class="swatch" style="background:var(--absent)"></span>Not in word</div>
+  </div>
+
+
+<script>
+const WORDS = ["APPLE","BRAVE","CRANE","DRESS","EAGLE","FLAME","GRAPE","HOUSE",
+"IMAGE","JOKER","KNIFE","LEMON","MOUSE","NURSE","OCEAN","PIANO",
+"QUOTE","RIVER","STONE","TIGER","UNITY","VIVID","WATER","YIELD",
+"ZEBRA","BREAD","CHESS","DANCE","EARTH","FRESH","GHOST","HAPPY",
+"IVORY","JUICE","KARMA","LIGHT","MONEY","NOBLE","OLIVE","PLANT",
+"QUEEN","ROBOT","SMILE","TRUST","UNCLE","VOICE","WOMAN","SPOON"];
+
+const ROWS = 6, COLS = 5;
+let target = "";
+let grid = [];       // grid[row][col] = letter
+let curRow = 0, curCol = 0;
+let gameOver = false;
+
+const boardEl = document.getElementById('board');
+const messageEl = document.getElementById('message');
+const keyboardEl = document.getElementById('keyboard');
+
+function countOccurrences(str, ch){
+  return str.split('').filter(c => c === ch).length;
+}
+
+function buildBoard(){
+  boardEl.innerHTML = '';
+  grid = [];
+  for(let r=0; r<ROWS; r++){
+    const rowEl = document.createElement('div');
+    rowEl.className = 'row';
+    const rowArr = [];
+    for(let c=0; c<COLS; c++){
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.id = `tile-${r}-${c}`;
+      rowEl.appendChild(tile);
+      rowArr.push('');
+    }
+    boardEl.appendChild(rowEl);
+    grid.push(rowArr);
+  }
+}
+
+const KB_ROWS = ["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
+function buildKeyboard(){
+  keyboardEl.innerHTML = '';
+  KB_ROWS.forEach((row, i) => {
+    const krow = document.createElement('div');
+    krow.className = 'krow';
+    if(i === 2){
+      krow.appendChild(makeKey('ENTER', true));
+    }
+    row.split('').forEach(letter => krow.appendChild(makeKey(letter)));
+    if(i === 2){
+      krow.appendChild(makeKey('DEL', true));
+    }
+    keyboardEl.appendChild(krow);
+  });
+}
+function makeKey(label, wide=false){
+  const btn = document.createElement('button');
+  btn.className = 'key' + (wide ? ' wide' : '');
+  btn.id = 'key-' + label;
+  btn.textContent = label === 'DEL' ? '⌫' : label;
+  btn.addEventListener('click', () => handleKey(label));
+  return btn;
+}
+
+function setMessage(text, cls=''){
+  messageEl.textContent = text;
+  messageEl.className = cls;
+}
+
+function newGame(customWord){
+  target = customWord || WORDS[Math.floor(Math.random() * WORDS.length)];
+  curRow = 0; curCol = 0; gameOver = false;
+  buildBoard();
+  buildKeyboard();
+  setMessage(customWord ? "Word set. Good luck to the guesser!" : "Type your 5-letter guess, then press Enter.");
+}
+
+function handleKey(key){
+  if(gameOver) return;
+  if(key === 'ENTER'){ submitGuess(); return; }
+  if(key === 'DEL'){
+    if(curCol > 0){
+      curCol--;
+      grid[curRow][curCol] = '';
+      updateTile(curRow, curCol);
+    }
+    return;
+  }
+  if(/^[A-Z]$/.test(key) && curCol < COLS){
+    grid[curRow][curCol] = key;
+    updateTile(curRow, curCol);
+    curCol++;
+  }
+}
+
+function updateTile(r, c){
+  const tile = document.getElementById(`tile-${r}-${c}`);
+  tile.textContent = grid[r][c];
+  tile.classList.toggle('filled', grid[r][c] !== '');
+}
+
+function colorPriority(cls){
+  if(cls === 'green' || cls === 'cyan') return 4;
+  if(cls === 'orange' || cls === 'yellow') return 2;
+  if(cls === 'absent') return 1;
+  return 0;
+}
+
+function updateKey(letter, cls){
+  const keyEl = document.getElementById('key-' + letter);
+  if(!keyEl) return;
+  const current = ['green','cyan','yellow','orange','absent'].find(c => keyEl.classList.contains(c));
+  if(colorPriority(cls) >= colorPriority(current)){
+    ['green','cyan','yellow','orange','absent'].forEach(c => keyEl.classList.remove(c));
+    keyEl.classList.add(cls);
+  }
+}
+
+function submitGuess(){
+  if(curCol < COLS){
+    setMessage("Not enough letters.", '');
+    shakeRow(curRow);
+    return;
+  }
+  const guess = grid[curRow].join('');
+
+  for(let i=0; i<COLS; i++){
+    const letter = guess[i];
+    const targetCount = countOccurrences(target, letter);
+    let cls;
+    if(letter === target[i]){
+      cls = targetCount >= 2 ? 'cyan' : 'green';
+    } else if(targetCount > 0){
+      cls = targetCount >= 2 ? 'orange' : 'yellow';
+    } else {
+      cls = 'absent';
+    }
+    const tile = document.getElementById(`tile-${curRow}-${i}`);
+    setTimeout(() => {
+      tile.classList.add(cls, 'reveal');
+      updateKey(letter, cls);
+    }, i * 120);
+  }
+
+  const won = guess === target;
+  const lastRow = curRow === ROWS - 1;
+
+  setTimeout(() => {
+    if(won){
+      gameOver = true;
+      setMessage(`You got it! The word was ${target}.`, 'win');
+    } else if(lastRow){
+      gameOver = true;
+      setMessage(`Out of tries. The word was ${target}.`, 'lose');
+    } else {
+      curRow++; curCol = 0;
+      setMessage("Keep going.", '');
+    }
+  }, COLS * 120 + 150);
+}
+
+function shakeRow(r){
+  const rowEl = boardEl.children[r];
+  rowEl.style.transform = 'translateX(-4px)';
+  setTimeout(() => rowEl.style.transform = 'translateX(4px)', 60);
+  setTimeout(() => rowEl.style.transform = '', 120);
+}
+
+document.addEventListener('keydown', (e) => {
+  const k = e.key.toUpperCase();
+  if(k === 'ENTER') handleKey('ENTER');
+  else if(k === 'BACKSPACE') handleKey('DEL');
+  else if(/^[A-Z]$/.test(k)) handleKey(k);
+});
+
+const modeSelect = document.getElementById('modeSelect');
+
+async function startSharedWordle(){
+  setMessage("Loading today's word...", '');
+  try{
+    const res = await fetch('word-config.json?t=' + Date.now());
+    if(!res.ok) throw new Error('not found');
+    const data = await res.json();
+    const word = String(data.word || '').trim().toUpperCase();
+    if(!/^[A-Z]{5}$/.test(word)) throw new Error('bad word');
+    newGame(word);
+    setMessage("Type your 5-letter guess, then press Enter.", '');
+  } catch(err){
+    setMessage("Couldn't load the shared word. Make sure word-config.json exists in the repo next to index.html.", 'lose');
+  }
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  if(modeSelect.value === 'admin'){
+    startSharedWordle();
+  } else {
+    newGame();
+  }
+});
+
+buildBoard();
+buildKeyboard();
+gameOver = true;
+setMessage("Pick a mode above, then press Start.");
+</script>
+</body>
+</html>
